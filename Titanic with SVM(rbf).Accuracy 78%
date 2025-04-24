@@ -1,0 +1,51 @@
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+
+df=pd.read_csv("ВАШ_ПУТЬ_К_train_set", encoding='utf-8')
+df = df.drop(columns=['Cabin','Ticket','Name','Embarked'])
+#df.select_dtypes('number')#возвращает подмножество столбцов с таким типом данных
+df = df.fillna(df.select_dtypes('number').mean().round(1))
+'''Заполнение пробелов в столбцах с числовыми переменными на среднее значение с округлением до 1 знака после запятой'''
+# corr=df.select_dtypes('number').corr()
+# sns.heatmap(corr, annot=True, cmap='coolwarm')
+# plt.show()
+df=pd.get_dummies(df, drop_first=True)
+'''Применение OneHotEncoding ко всем столбцам с строковыми переменными и удаление первого из перекодированных признаков. Он не нужен так как всего 2 признака и очевидно'''
+
+df_test=pd.read_csv("ВАШ_ПУТЬ_К_test_set", encoding='utf-8')
+df_test = df_test.drop(columns=['Cabin','Ticket','Name','Embarked'])
+df_test = df_test.fillna(df_test.select_dtypes('number').mean().round(1))
+df_test = pd.get_dummies(df_test, drop_first=True)
+'''Тоже самое для test'''
+
+
+corr=df.corr()
+sns.heatmap(corr,annot=True, cmap='coolwarm')
+'''corr вычисляет попарную корреляцию столбцов и записывает в dataframe
+   sns.heatmap строит тепловую карту, annot - подписывает ячейки, cmap = coolwarm - цветовая карта в которой синий - отрицательная корреляция, красный - положительная'''
+
+X_train=df.iloc[:,[2,6,7]].values
+y_train=df.iloc[:,1].values
+
+X_test=df_test.iloc[:,[1,2,6]].values
+y_test=df_test.iloc[:,]
+
+from sklearn.svm import SVC
+from sklearn.preprocessing import StandardScaler
+from sklearn.metrics import accuracy_score
+
+sc=StandardScaler()
+X_train_std=sc.fit_transform(X_train)
+X_test_std=sc.transform(X_test)
+
+svm=SVC(kernel='rbf', gamma=1000,random_state=1,C=100.0)
+svm.fit(X_train_std,y_train)
+accuracy=svm.score(X_train_std,y_train)
+# y_pred = svm.predict(X_test_std)
+
+# submission=pd.DataFrame({'PassengerId':df_test['PassengerId'],
+#   						 'Survived': y_pred})
+# submission.to_csv('submission2_titanic.csv',index=False)
