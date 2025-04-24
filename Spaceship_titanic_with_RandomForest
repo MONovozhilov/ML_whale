@@ -1,0 +1,38 @@
+import numpy as np
+import matplotlib.pyplot as plt
+import pandas as pd
+import seaborn as sns
+
+
+df=pd.read_csv("ВАШ_ПУТЬ")
+df=df.drop(columns=['Name','HomePlanet'])
+df=df.fillna(df.select_dtypes('number').mean().round(1))
+df=df.dropna(subset=['Cabin','CryoSleep','Age','RoomService','Spa','VRDeck'])
+df['Side']=df['Cabin'].apply(lambda x: 1 if isinstance(x,str) and x[-1]=='P' else(0 if isinstance(x,str) else np.nan))
+df=df.drop(columns=['Cabin','Destination'])
+
+df_test=pd.read_csv("ВАШ_ПУТЬ")
+df_test=df_test.drop(columns=['Name','HomePlanet'])
+df_test=df_test.fillna(df_test.select_dtypes('number').mean().round(1))
+df_test['Side']=df_test['Cabin'].apply(lambda x: 1 if isinstance(x,str) and x[-1]=='P' else(0 if isinstance(x,str) else np.nan))
+df_test=df_test.drop(columns=['Cabin','Destination'])
+
+corr=df.corr()
+sns.heatmap(corr,cmap='coolwarm')
+
+X_train=df.iloc[:,[1,2,4,7,8,10]].values
+y_train=df.iloc[:,9].values
+
+X_test=df_test.iloc[:,[1,2,4,7,8,9]].values
+
+
+from sklearn.ensemble import RandomForestClassifier
+
+forest=RandomForestClassifier(n_estimators=100,criterion='gini',random_state=1,n_jobs=2)
+forest.fit(X_train,y_train)
+accuracy=forest.score(X_train,y_train)
+
+y_pred=forest.predict(X_test)
+submission=pd.DataFrame({'PassengerId':df_test['PassengerId'],
+						 'Transported':y_pred})
+submission.to_csv('submission5_space.csv',index=False)
